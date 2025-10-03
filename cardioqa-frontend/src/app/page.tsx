@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,6 +23,9 @@ export default function CardioQA() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // FIXED: Use environment variable for API URL
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://novoo5-cardioqa-ai-system.hf.space'
+
   const handleQuery = async () => {
     if (query.trim().length < 5) {
       setError('Please enter a more specific cardiac health question')
@@ -34,33 +37,47 @@ export default function CardioQA() {
     setResponse(null)
 
     try {
-      const result = await axios.post('http://127.0.0.1:8000/query', {
+      // FIXED: Use dynamic API URL
+      const result = await axios.post(`${API_URL}/query`, {
         query: query.trim(),
         include_metadata: true
       })
 
       setResponse(result.data)
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to get response from CardioQA')
+    } catch (err) {
+      // FIXED: Proper error typing
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to get response from CardioQA')
+      } else {
+        setError('An unexpected error occurred')
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  const getSafetyColor = (score: number) => {
+  // FIXED: Proper event typing
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleQuery()
+    }
+  }
+
+  const getSafetyColor = (score: number): string => {
     if (score >= 90) return 'bg-emerald-100 text-emerald-800 border-emerald-200'
     if (score >= 70) return 'bg-amber-100 text-amber-800 border-amber-200'
     return 'bg-red-100 text-red-800 border-red-200'
   }
 
-  const getConfidenceColor = (confidence: string) => {
+  const getConfidenceColor = (confidence: string): string => {
     if (confidence === 'High') return 'bg-blue-100 text-blue-800 border-blue-200'
     if (confidence === 'Medium') return 'bg-purple-100 text-purple-800 border-purple-200'
     return 'bg-orange-100 text-orange-800 border-orange-200'
   }
 
-  // FIXED: Markdown formatting function
-  const formatResponse = (text: string) => {
+  // FIXED: Markdown formatting with proper regex escaping
+  const formatResponse = (text: string): string => {
     return text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -131,6 +148,7 @@ export default function CardioQA() {
                   placeholder="Example: What are the early warning signs of a heart attack? How can I prevent cardiovascular disease?"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   rows={4}
                   className="resize-none text-slate-700 bg-slate-50 border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                 />
@@ -138,8 +156,8 @@ export default function CardioQA() {
                 <div className="flex space-x-3">
                   <Button 
                     onClick={handleQuery} 
-                    disabled={loading}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 shadow-lg"
+                    disabled={loading || query.trim().length < 5}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 shadow-lg disabled:opacity-50"
                   >
                     {loading ? (
                       <>
@@ -192,7 +210,7 @@ export default function CardioQA() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                  {/* FIXED: Response Text with Proper Markdown */}
+                  {/* Response Text with Proper Markdown */}
                   <div className="mb-6">
                     <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed text-base">
                       <div 
@@ -205,7 +223,7 @@ export default function CardioQA() {
                   </div>
 
                   {/* Safety Warnings */}
-                  {response.warnings.length > 0 && (
+                  {response.warnings && response.warnings.length > 0 && (
                     <Alert className="border-orange-200 bg-orange-50 mb-6">
                       <div className="flex items-start space-x-3">
                         <span className="text-orange-500 text-lg flex-shrink-0">⚠️</span>
@@ -223,7 +241,7 @@ export default function CardioQA() {
                     </Alert>
                   )}
 
-                  {/* FIXED: Response Metadata with Dynamic Colors */}
+                  {/* Response Metadata with Dynamic Colors */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className={`p-4 rounded-lg border-2 text-center ${getSafetyColor(response.safety_score)}`}>
                       <div className="text-2xl font-bold mb-1">
