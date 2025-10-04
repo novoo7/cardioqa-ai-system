@@ -107,7 +107,7 @@ async def lifespan(app: FastAPI):
     logger.info("🫀 Starting CardioQA API...")
     
     try:
-        # FIXED: Force ChromaDB to create new compatible database
+        # Initialize ChromaDB with fallback database creation
         possible_paths = [
             "./chroma_db",
             "chroma_db", 
@@ -392,7 +392,7 @@ async def get_system_stats():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# FIXED: Proper port binding for Render deployment
+# Configure port for cloud deployment
 if __name__ == "__main__":
     import uvicorn
     # Railway uses PORT environment variable
