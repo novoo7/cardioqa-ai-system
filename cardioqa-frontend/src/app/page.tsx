@@ -23,7 +23,7 @@ export default function CardioQA() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // FIXED: Use environment variable for API URL
+  // Configure API URL from environment variables
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://novoo5-cardioqa-ai-system.hf.space'
 
   const handleQuery = async () => {
@@ -37,7 +37,7 @@ export default function CardioQA() {
     setResponse(null)
 
     try {
-      // FIXED: Use dynamic API URL
+      // Send query to CardioQA backend API
       const result = await axios.post(`${API_URL}/query`, {
         query: query.trim(),
         include_metadata: true
@@ -45,7 +45,7 @@ export default function CardioQA() {
 
       setResponse(result.data)
     } catch (err) {
-      // FIXED: Proper error typing
+      // Handle API errors with proper TypeScript typing
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.detail || 'Failed to get response from CardioQA')
       } else {
@@ -56,7 +56,7 @@ export default function CardioQA() {
     }
   }
 
-  // FIXED: Proper event typing
+  // Handle keyboard shortcuts for query submission
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -76,7 +76,7 @@ export default function CardioQA() {
     return 'bg-orange-100 text-orange-800 border-orange-200'
   }
 
-  // FIXED: Markdown formatting with proper regex escaping
+  // Format markdown text for display
   const formatResponse = (text: string): string => {
     return text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
